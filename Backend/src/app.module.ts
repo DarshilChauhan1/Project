@@ -19,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         // entities: [],
+        // entities : [__dirname + './src/**/*entity.{js,ts}'],
         autoLoadEntities : true,
         synchronize: true,
         logging : true

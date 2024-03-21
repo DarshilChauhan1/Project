@@ -1,13 +1,17 @@
-import { BadRequestException, ConflictException, HttpCode, HttpStatus, Injectable, Next } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpCode, HttpStatus, Injectable, InternalServerErrorException, Next, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt'
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private userRepository: Repository<User>) { }
+  constructor(
+    @InjectRepository(User) private userRepository: Repository<User>,
+    private readonly jwtService: JwtService
+  ) { }
 
   async singUp(userPayload: CreateUserDto) {
     const { username, password } = userPayload;
@@ -33,6 +37,28 @@ export class UsersService {
     }
   }
 
+
+  async generateTokens(payload : {refreshToken? : string}) : Promise<{}>{
+    try {
+      const {refreshToken} = payload;
+      if(refreshToken){
+      const decode = await this.jwtService.verifyAsync(refreshToken, {secret : process.env.REFRESH_TOKEN_SECRET});
+      if(decode){
+        const user = await this.userRepository.findOne({where : {id : decode.id}});
+        if(!user) throw new UnauthorizedException('User not found');
+        const accessToken = await this.generateAccessToken(user.id);
+        return {status : 201, data : {accessToken : accessToken, refreshToken : refreshToken}, message : 'Token generated Successfully' }
+      }
+    } else {
+      throw new BadRequestException('Token not found')
+    }
+
+    } catch (error) {
+        throw new UnauthorizedException('User is not Authorized')
+    }
+  }
+  
+
   async getAllUsers(): Promise<User[]> {
     try {
       const allUsers = await this.userRepository.find()
@@ -41,6 +67,14 @@ export class UsersService {
       console.log("Error--->", error)
       throw new Error(error)
     }
+  }
+
+  private async generateAccessToken(id: number) {
+    return await this.jwtService.signAsync({ id: id }, { secret: process.env.ACCESS_TOKEN_SECRET });
+  }
+
+  private async generateRefreshToken(id: number) {
+    return await this.jwtService.signAsync({ id: id }, { secret: process.env.REFRESH_TOKEN_SECRET });
   }
 
 }

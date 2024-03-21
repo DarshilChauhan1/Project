@@ -5,9 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports : [
+    JwtModule,
     ConfigModule.forRoot(),
     forwardRef(()=> AuthModule),
     TypeOrmModule.forFeature([User]),

@@ -11,6 +11,11 @@ export class UsersController {
   async signup(@Body() userPayload : CreateUserDto){
      return this.usersService.singUp(userPayload)
   }
+
+  @Post('refresh')
+  async generateTokens(@Body() payload : {}){
+    
+  }
 }
 
 @Controller('api')

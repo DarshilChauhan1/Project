@@ -11,13 +11,7 @@ import { AuthGuard } from './auth.guard';
   imports : [
     forwardRef(()=> UsersModule),
     ConfigModule.forRoot(),
-    JwtModule.register({
-      global : true,
-      secret : process.env.ACCESS_TOKEN_SECRET,
-      signOptions : {
-        expiresIn : "1d"
-      }
-    }),
+    JwtModule
   ],
   providers: [AuthService],
   controllers: [AuthController],

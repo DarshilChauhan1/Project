@@ -14,4 +14,7 @@ export class User {
 
     @Column({nullable : false, type : 'text'})
     password : string
+
+    @Column({type : 'text', nullable : true})
+    refreshToken : string
 }

@@ -43,11 +43,11 @@ export class AuthService {
     }
 
     private async generateAccessToken(id : number){
-        return await this.jwtService.signAsync({id : id}, {secret : process.env.ACCESS_TOKEN_SECRET});
+        return await this.jwtService.signAsync({id : id}, {secret : process.env.ACCESS_TOKEN_SECRET, expiresIn : '2m'});
     }
 
     private async generateRefreshToken(id : number){
-        return await this.jwtService.signAsync({id : id}, {secret : process.env.REFRESH_TOKEN_SECRET});
+        return await this.jwtService.signAsync({id : id}, {secret : process.env.REFRESH_TOKEN_SECRET, expiresIn : '1d'});
     }
         
 }

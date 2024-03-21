@@ -46,8 +46,12 @@ export class UsersService {
       if(decode){
         const user = await this.userRepository.findOne({where : {id : decode.id}});
         if(!user) throw new UnauthorizedException('User not found');
+        if(refreshToken == user.refreshToken) {
         const accessToken = await this.generateAccessToken(user.id);
         return {status : 201, data : {accessToken : accessToken, refreshToken : refreshToken}, message : 'Token generated Successfully' }
+        } else {
+          throw new UnauthorizedException('User is not authorized')
+        }
       }
     } else {
       throw new BadRequestException('Token not found')

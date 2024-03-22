@@ -1,10 +1,11 @@
-import { BadRequestException, ConflictException, HttpCode, HttpStatus, Injectable, InternalServerErrorException, Next, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class UsersService {
@@ -18,7 +19,8 @@ export class UsersService {
     if (username && password) {
       try {
         const existUser = await this.userRepository.findOne({ where: { username: username } })
-        if (existUser) throw new ConflictException('User with that username already exists')
+        console.log(existUser)
+        if (existUser) throw new ConflictException()
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -38,25 +40,46 @@ export class UsersService {
   }
 
 
-  async generateTokens(payload : {refreshToken? : string}) : Promise<{}>{
+  async generateTokens(payload : {refreshToken : string}) : Promise<{}>{
     try {
       const {refreshToken} = payload;
+      console.log(refreshToken);
       if(refreshToken){
       const decode = await this.jwtService.verifyAsync(refreshToken, {secret : process.env.REFRESH_TOKEN_SECRET});
       if(decode){
         const user = await this.userRepository.findOne({where : {id : decode.id}});
         if(!user) throw new UnauthorizedException('User not found');
+        if(refreshToken == user.refreshToken) {
         const accessToken = await this.generateAccessToken(user.id);
         return {status : 201, data : {accessToken : accessToken, refreshToken : refreshToken}, message : 'Token generated Successfully' }
+        } else {
+          throw new UnauthorizedException('User is not authorized')
+        }
+      } else {
+        throw new UnauthorizedException('Refresh Token Expired')
       }
     } else {
       throw new BadRequestException('Token not found')
     }
 
     } catch (error) {
-        throw new UnauthorizedException('User is not Authorized')
+        return error
     }
   }
+
+  async logoutUser(userPayload : {userId : number}) : Promise<any>{
+    try {
+      const {userId} = userPayload;
+      const verifyUser = await this.userRepository.findOne({where : {id : userId}});
+      console.log(verifyUser);
+      if(!verifyUser) throw new ConflictException('User not found');
+      console.log(verifyUser);
+      await this.userRepository.save({...verifyUser, refreshToken : null})
+    } catch (error) {
+      return error
+    }
+  }
+
   
 
   async getAllUsers(): Promise<User[]> {
@@ -70,11 +93,7 @@ export class UsersService {
   }
 
   private async generateAccessToken(id: number) {
-    return await this.jwtService.signAsync({ id: id }, { secret: process.env.ACCESS_TOKEN_SECRET });
-  }
-
-  private async generateRefreshToken(id: number) {
-    return await this.jwtService.signAsync({ id: id }, { secret: process.env.REFRESH_TOKEN_SECRET });
+    return await this.jwtService.signAsync({ id: id }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn : '50s'});
   }
 
 }

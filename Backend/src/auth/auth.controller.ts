@@ -7,6 +7,7 @@ export class AuthController {
     constructor(private authService : AuthService){}
     @Post('login')
     async login(@Body() authPayload : AuthUserDto){
+        console.log('API HIT')
         return this.authService.login(authPayload)
     }
 }

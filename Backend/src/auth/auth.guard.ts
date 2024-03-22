@@ -22,6 +22,7 @@ export class AuthGuard implements CanActivate{
                     secret : this.configService.get('ACCESS_TOKEN_SECRET')
                 }
             )
+            console.log(payload);
             request.user = payload;
             return true;
         } catch (error) {
@@ -30,6 +31,7 @@ export class AuthGuard implements CanActivate{
     }
 
     private extractTokenFromHeader(request : Request) : string | undefined{
+        console.log(request.headers)
         const [type, token] = request.headers.authorization?.split(" ");
         return type == 'Bearer' ? token : undefined;
     }

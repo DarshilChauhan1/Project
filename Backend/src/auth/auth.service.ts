@@ -16,8 +16,10 @@ export class AuthService {
 
     async login(userPayload : AuthUserDto){
         try {
+            console.log(userPayload)
             const {username, password} = userPayload;
             const authUser = await this.userRepository.findOne({where : {username : username}});
+            console.log(authUser)
             if(!authUser) throw new ConflictException('Username or password is incorrect');
 
             const verifyPassword = await bcrypt.compare(password, authUser.password);
@@ -43,11 +45,11 @@ export class AuthService {
     }
 
     private async generateAccessToken(id : number){
-        return await this.jwtService.signAsync({id : id}, {secret : process.env.ACCESS_TOKEN_SECRET, expiresIn : '2h'});
+        return await this.jwtService.signAsync({id : id}, {secret : process.env.ACCESS_TOKEN_SECRET, expiresIn : '50s'});
     }
 
     private async generateRefreshToken(id : number){
-        return await this.jwtService.signAsync({id : id}, {secret : process.env.REFRESH_TOKEN_SECRET, expiresIn : '1d'});
+        return await this.jwtService.signAsync({id : id}, {secret : process.env.REFRESH_TOKEN_SECRET, expiresIn : '2m'});
     }
         
 }

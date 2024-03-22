@@ -19,7 +19,8 @@ export class UsersService {
     if (username && password) {
       try {
         const existUser = await this.userRepository.findOne({ where: { username: username } })
-        if (existUser) throw new ConflictException('User with that username already exists')
+        console.log(existUser)
+        if (existUser) throw new ConflictException()
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -44,7 +45,6 @@ export class UsersService {
       const {refreshToken} = payload;
       console.log(refreshToken);
       if(refreshToken){
-      console.log("Enterrr")
       const decode = await this.jwtService.verifyAsync(refreshToken, {secret : process.env.REFRESH_TOKEN_SECRET});
       if(decode){
         const user = await this.userRepository.findOne({where : {id : decode.id}});
@@ -55,6 +55,8 @@ export class UsersService {
         } else {
           throw new UnauthorizedException('User is not authorized')
         }
+      } else {
+        throw new UnauthorizedException('Refresh Token Expired')
       }
     } else {
       throw new BadRequestException('Token not found')
@@ -91,11 +93,7 @@ export class UsersService {
   }
 
   private async generateAccessToken(id: number) {
-    return await this.jwtService.signAsync({ id: id }, { secret: process.env.ACCESS_TOKEN_SECRET });
-  }
-
-  private async generateRefreshToken(id: number) {
-    return await this.jwtService.signAsync({ id: id }, { secret: process.env.REFRESH_TOKEN_SECRET });
+    return await this.jwtService.signAsync({ id: id }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn : '50s'});
   }
 
 }

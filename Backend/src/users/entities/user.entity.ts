@@ -1,5 +1,5 @@
 import {Column, Entity, PrimaryGeneratedColumn} from 'typeorm'
-
+import {Role} from './../../roles/roles.enum'
 
 @Entity()
 export class User {
@@ -17,4 +17,10 @@ export class User {
 
     @Column({type : 'text', nullable : true})
     refreshToken : string
+
+    @Column({enum : Role, default : Role.USER})
+    roles : Role
+
+    @Column({enum : ['0', '1'], default : 0})
+    IsAdmin : number
 }

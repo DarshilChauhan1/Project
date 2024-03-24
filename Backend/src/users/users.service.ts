@@ -6,36 +6,38 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt';
 import { NotFoundError } from 'rxjs';
+import { AllExceptionFiler } from 'src/exceptionfilter/exceptionhandling.middleware';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly exceptionFilter: AllExceptionFiler
   ) { }
 
   async singUp(userPayload: CreateUserDto) {
-    const { username, password } = userPayload;
-    if (username && password) {
-      try {
-        const existUser = await this.userRepository.findOne({ where: { username: username } })
-        console.log(existUser)
-        if (existUser) throw new ConflictException()
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const newUser = this.userRepository.create({ ...userPayload, password: hashedPassword });
-        await this.userRepository.save(newUser);
-        return { message: "User signedUp successfully", statusCode: HttpStatus.CREATED }
-      } catch (error) {
-        if (error instanceof ConflictException) {
-          throw error
+    try {
+      const { username, password, email } = userPayload;
+      if (username && password && email) {
+        try {
+          const existUser = await this.userRepository.findOne({ where: { username: username } })
+          console.log(existUser)
+          if (existUser) throw new ConflictException('User Already Exits')
+  
+          const hashedPassword = await bcrypt.hash(password, 10);
+  
+          const newUser = this.userRepository.create({ ...userPayload, password: hashedPassword });
+          await this.userRepository.save(newUser);
+          return { message: "User signedUp successfully", statusCode: HttpStatus.CREATED }
+        } catch (error) {
+          return error
         }
-        console.log('Error Occur While Signing Up', error);
-        throw new Error('Internal Server Error');
+      } else {
+        throw new BadRequestException('All fields are required')
       }
-    } else {
-      throw new BadRequestException('Username and Password is required')
+    } catch (error) {
+      throw error
     }
   }
 
@@ -63,7 +65,7 @@ export class UsersService {
     }
 
     } catch (error) {
-        return error
+        throw error
     }
   }
 

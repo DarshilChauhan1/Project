@@ -7,10 +7,10 @@ export class CreateUserDto {
     username : string;
 
     @ApiProperty()
-    @IsString()
+    @IsEmail()
     email : string;
     
     @ApiProperty()
-    @IsEmail()
+    @IsString()
     password : string;
 }

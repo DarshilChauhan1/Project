@@ -1,4 +1,4 @@
-import { ConflictException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthUserDto } from 'src/users/dto/auth-user.dto';
@@ -9,22 +9,22 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(User) private userRepository : Repository<User>,
-        private jwtService : JwtService
-    ) {}
+        @InjectRepository(User) private userRepository: Repository<User>,
+        private jwtService: JwtService
+    ) { }
 
 
-    async login(userPayload : AuthUserDto){
+    async login(userPayload: AuthUserDto) {
         try {
-            console.log(userPayload)
-            const {username, password} = userPayload;
-            const authUser = await this.userRepository.findOne({where : {username : username}});
-            console.log(authUser)
-            if(!authUser) throw new ConflictException('Username or password is incorrect');
+            const { username, password } = userPayload;
+            if(!username || !password) throw new BadRequestException('All fields are required')
+            console.log('Enter into try block')
+            const authUser = await this.userRepository.findOne({ where: { username: username } });
+            if (!authUser) throw new ConflictException('Username or password is incorrect');
 
             const verifyPassword = await bcrypt.compare(password, authUser.password);
 
-            if(!verifyPassword) throw new ConflictException('Password is incorrect')
+            if (!verifyPassword) throw new ConflictException('Password is incorrect')
 
             const accessToken = await this.generateAccessToken(authUser.id);
             const refreshToken = await this.generateRefreshToken(authUser.id);
@@ -33,23 +33,23 @@ export class AuthService {
             await this.userRepository.save(authUser);
 
             const userData = {
-                id : authUser.id,
-                username : authUser.username,
-                email : authUser.email
+                id: authUser.id,
+                username: authUser.username,
+                email: authUser.email
             }
-            
-            return {status : 201, data : {accessToken : accessToken, refreshToken : refreshToken, userData : userData}, message : 'User loggedIn successfully'}
+
+            return { status: 201, data: { accessToken: accessToken, refreshToken: refreshToken, userData: userData }, message: 'User loggedIn successfully' }
         } catch (error) {
-            return error
+            throw error
         }
     }
 
-    private async generateAccessToken(id : number){
-        return await this.jwtService.signAsync({id : id}, {secret : process.env.ACCESS_TOKEN_SECRET, expiresIn : '50s'});
+    private async generateAccessToken(id: number) {
+        return await this.jwtService.signAsync({ id: id }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: '1h' });
     }
 
-    private async generateRefreshToken(id : number){
-        return await this.jwtService.signAsync({id : id}, {secret : process.env.REFRESH_TOKEN_SECRET, expiresIn : '2m'});
+    private async generateRefreshToken(id: number) {
+        return await this.jwtService.signAsync({ id: id }, { secret: process.env.REFRESH_TOKEN_SECRET, expiresIn: '5d' });
     }
-        
+
 }

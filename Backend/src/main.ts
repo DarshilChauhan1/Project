@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as csurf from 'csurf';
+import { AllExceptionFiler } from './exceptionfilter/exceptionhandling.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // app.useGlobalFilters(new AllExceptionFiler())
   app.enableCors()
   const config = new DocumentBuilder()
   .addBearerAuth()
